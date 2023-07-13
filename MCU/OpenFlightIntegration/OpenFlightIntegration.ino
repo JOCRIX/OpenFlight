@@ -733,9 +733,9 @@ void MotorSetPoint(uint16_t intervalus)
   }
 }
 
-float *CalcPIDTorque(droneSetpoint *ptrdSP, altitudeData *ptraD, angleData *ptrdA, float dT)
+float *CalcPIDTorque(droneSetpoint *ptrdSP, altitudeData *ptraD, angleData *ptrdA, float dT) 
 {
-  float torque[4];
+  static float torque[4];
   static valPID vA, vP, vR, vY;
   vA.cIOld = 0, vP.cIOld = 0, vR.cIOld = 0, vY.cIOld = 0;
   static float prevAESig = 0, prevPESig = 0, prevRESig = 0, prevYESig = 0;
@@ -816,6 +816,23 @@ void SetESCPWM(float *motorW, uint16_t offset)
   analogWrite(M3, *motorW + offset);
   motorW++;
   analogWrite(M4, *motorW + offset);
+}
+
+void BootESC(){
+  uint8_t motorPins[4] = {M1, M2, M3, M4};
+  Serial.print("ESC booting..\n");
+  analogWrite(M1, 120);
+  analogWrite(M2, 120);
+  analogWrite(M3, 120);
+  analogWrite(M4, 120);
+  delay(5000);
+  for(uint8_t i = 0; i < 4; i++){
+    analogWrite(motorPins[i], 150);
+    delay(2000);
+    analogWrite(motorPins[i], 130);
+  }
+  Serial.print("ESC boot complete\n");
+  
 }
 
 void setup()
@@ -938,13 +955,23 @@ void setup()
 
 #endif
   Serial.print("IM ALIVE!! \n");
+  BootESC();
 }
+
 void loop()
 {
   SetAngleData(1);
   SetAltitudeData(100);
-  CheckSerialMove();
-  MotorSetPoint(500);
+ // CheckSerialMove();
+ // MotorSetPoint(500);
+
+//PWM skal være 120 først
+/*
+analogWrite(M1, 150); //M1 150 min efter start
+analogWrite(M2, 150); //M2 150 min efter start
+analogWrite(M3, 130); //M2 150 min efter start
+analogWrite(M4, 150); //M2 150 min efter start
+*/
 
 #if PRINTDRONESTATUS == 1
   SerialPrintDroneState(&aD, &dA, &dSP, 1000);
